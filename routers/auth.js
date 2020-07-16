@@ -1,10 +1,18 @@
 const { Router } = require("express");
 const bcrypt = require("bcrypt");
 const User = require("../models").user;
+const { toJWT } = require("../auth/jwt");
+
+const authMiddleware = require("../auth/middleware");
 
 const router = new Router();
 
-router.get("/test", (req, res) => res.send("Reached the router!"));
+router.get("/test", authMiddleware, (req, res) => {
+  console.log(req.user);
+
+  res.send("Reached the router!");
+  // User.findOne();
+});
 
 router.post("/signup", async (req, res, next) => {
   try {
@@ -32,7 +40,6 @@ router.post("/signup", async (req, res, next) => {
 });
 
 router.post("/login", async (req, res, next) => {
-  console.log("Reached the route!");
   try {
     // get email and password from body
     // check if I got them.
@@ -49,7 +56,8 @@ router.post("/login", async (req, res, next) => {
         console.log("passwords match?", passwordsMatch);
 
         if (passwordsMatch) {
-          res.send("login successfull"); // actually, we have to send back the jwt
+          const token = toJWT({ userId: user.id }); // => { userId: 2 };
+          res.send({ token }); // actually, we have to send back the jwt
         } else {
           res.status(401).send("Unauthorized");
         }
